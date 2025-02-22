@@ -1,234 +1,137 @@
-AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
-    local elegodown = BoxZone:Create(vector3(965.16, 58.66, 112.55), 1.5, 1.5, {
-        name = 'elevatorgodown',
-        heading = 232.52,
-        minZ = 112.55 - 1.0,
-        maxZ = 112.55 + 5.0,
-        debugPoly = false
-    })
+local table = {}
+QBCore = exports['qb-core']:GetCoreObject()
 
-    local elegoup = BoxZone:Create(vector3(959.97, 43.0, 71.7), 1.5, 1.5, {
-        name = 'elevatorgoup',
-        heading = 103.57,
-        minZ = 71.7 - 1.0,
-        maxZ = 71.7 + 5.0,
-        debugPoly = false
-    })
-
-    elegodown:onPlayerInOut(function(isPointInside)
-        if isPointInside then
-            exports['qb-core']:DrawText('[E] To Go Down The Elevator', 'right')
-            inZone = 1
+function LoadPeds()
+    for k,v in pairs(table) do
+        lib.RequestModel(v.model)
+        v.entity = CreatePed(0, v.model, v.coords.x, v.coords.y, v.coords.z-1, v.coords.w, false, true)
+        SetPedDefaultComponentVariation(v.entity)
+        FreezeEntityPosition(v.entity, true)
+        SetPedCanBeTargetted(v.entity, false)
+        SetEntityInvincible(v.entity, true)
+        SetBlockingOfNonTemporaryEvents(v.entity, true)
+        if v.target then
+            exports['qb-target']:AddTargetEntity(v.entity, {
+                options = {
+                    {
+                        type = 'server',
+                        icon = 'fas fa-briefcase',
+                        label = 'Do Business',
+                        event = 'al-trader:memberSync'
+                    },
+                },
+                distance = 2.5,
+            })
         else
-            inZone = 0
-            exports['qb-core']:HideText()
-        end
-    end)
-
-    elegoup:onPlayerInOut(function(isPointInside)
-        if isPointInside then
-            exports['qb-core']:DrawText('[E] To Go Up The Elevator', 'right')
-            inZone = 2
-        else
-            inZone = 0
-            exports['qb-core']:HideText()
-        end
-    end)
-end)
-
-CreateThread(function()
-    while true do
-        Wait(1)
-        if inZone == 1 and IsControlPressed(0,46) then
-            inZone = 0
-            QBCore.Functions.Progressbar("elegoup", "Waiting..", 10000, false, true, {
-                disableMovement = true,
-                disableCarMovement = true,
-                disableMouse = false,
-                disableCombat = true,
-            }, {
-            }, {}, {}, function() -- Done
-                exports['qb-core']:HideText()
-                SetEntityCoords(PlayerPedId(), 961.1, 43.13, 71.7)
-            end)
-        elseif inZone == 2 and IsControlPressed(0,46) then
-            inZone = 0
-            QBCore.Functions.Progressbar("elegoup", "Waiting..", 10000, false, true, {
-                disableMovement = true,
-                disableCarMovement = true,
-                disableMouse = false,
-                disableCombat = true,
-            }, {
-            }, {}, {}, function() -- Done
-                exports['qb-core']:HideText()
-                SetEntityCoords(PlayerPedId(), 964.26, 59.36, 112.55)
-            end)
+            exports['qb-target']:AddTargetEntity(v.entity, {
+                options = {
+                    {
+                        type = 'server',
+                        icon = 'fas fa-briefcase',
+                        label = 'Do Business',
+                        action = function()
+                            QBCore.Functions.Notify('Speak to the boss.')
+                        end,
+                    },
+                },
+                distance = 2.5,
+            })
         end
     end
+end
+
+AddEventHandler('onResourceStop', function(r)
+    if GetCurrentResourceName() ~= r then return end
+
+    for k, v in pairs(table) do
+        DeleteEntity(v.entity)
+    end
+
+    DoScreenFadeIn(500)
 end)
 
-CreateThread(function()
-    exports['qb-target']:SpawnPed({
-        model = 's_m_m_movprem_01',
-        coords = vector4(920.89, 54.35, 111.7, 194.84),
-        minusOne = true,
-        freeze = true,
-        invincible = true,
-        blockevents = true,
-        component = true,
-        target = {
-            options = {
-                {
-                    type = 'client',
-                    action = function()
-                        QBCore.Functions.TriggerCallback('al-reputation:server:GetLevel', function(result)
-                            if result >= 5 then
-                                TargetMenu()
-                            else
-                                QBCore.Functions.Notify('You dont have enough street rep.', 'error')
-                            end
-                        end)
-                    end,
-                    icon = 'fas fa-briefcase',
-                    label = 'Do Business',
-                },
-            },
-            distance = 2.5,
-        },
-    })
-    exports['qb-target']:SpawnPed({
-        model = 's_m_m_highsec_01',
-        coords = vector4(919.37, 55.1, 111.7, 198.21),
-        minusOne = true,
-        freeze = true,
-        invincible = true,
-        blockevents = true,
-        component = true,
-        target = {
-            options = {
-                {
-                    type = 'client',
-                    action = function()
-                        QBCore.Functions.Notify('Talk To The Boss.', 'info')
-                    end,
-                    icon = 'fas fa-briefcase',
-                    label = 'Do Business',
-                },
-            },
-            distance = 2.5,
-        },
-    })
-    exports['qb-target']:SpawnPed({
-        model = 's_m_m_highsec_02',
-        coords = vector4(921.29, 55.67, 111.7, 202.8),
-        minusOne = true,
-        freeze = true,
-        invincible = true,
-        blockevents = true,
-        component = true,
-        target = {
-            options = {
-                {
-                    type = 'client',
-                    action = function()
-                        QBCore.Functions.Notify('Talk To The Boss.', 'info')
-                    end,
-                    icon = 'fas fa-briefcase',
-                    label = 'Do Business',
-                },
-            },
-            distance = 2.5,
-        },
-    })
+AddEventHandler('onResourceStart', function(r)
+    if GetCurrentResourceName() ~= r then return end
+
+    table = lib.callback.await('al-trader:GetPeds')
+    LoadPeds()
 end)
 
-RegisterNetEvent('startcutscenesell', function(name)
+AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
+    table = lib.callback.await('al-trader:GetPeds')
+    LoadPeds()
+end)
+
+RegisterNetEvent('startcutscenesell', function(ids)
     local plyrId = PlayerPedId()
+    local coords = GetEntityCoords(plyrId)
     local thisCutsceneName = 'hs3f_all_drp3'
-    local PlayerData = QBCore.Functions.GetPlayerData()
-    local charName = 'MP_1'
-    local clone = ClonePed(plyrId, false, false, true)
+    local clones = {}
+
+    DoScreenFadeOut(500)
+
+    for k,v in pairs(table) do
+        SetEntityVisible(v.entity, false)
+    end
+    SetEntityVisible(plyrId, false)
+
+    for k, v in pairs(ids) do
+        clones[k] = {}
+        clones[k].ped = GetPlayerPed(GetPlayerFromServerId(v))
+        clones[k].id = v
+        clones[k].clone = ClonePed(clones[k].ped, false, false, true)
+    end
 
     RequestCutscene(thisCutsceneName)
     while not HasCutsceneLoaded() do Wait(10) end 
     
-    RegisterEntityForCutscene(clone, charName, 0, 0, 64)
-    SetCutsceneEntityStreamingFlags(charName, 0, 1) 
-    
-	SetCutsceneEntityStreamingFlags('MP_2', 0, 1)
-	RegisterEntityForCutscene(plyrId, 'MP_2', 3, GetEntityModel(plyrId), 64)
-
-	SetCutsceneEntityStreamingFlags('MP_3', 0, 1)
-	RegisterEntityForCutscene(plyrId, 'MP_3', 3, GetEntityModel(plyrId), 64)
-
-	SetCutsceneEntityStreamingFlags('MP_4', 0, 1)
-	RegisterEntityForCutscene(plyrId, 'MP_4', 3, GetEntityModel(plyrId), 64)
-    
-    SetCutsceneOrigin(914.59, 58.7, 110.66, 9.79)
-
-
-	NewLoadSceneStartSphere(914.59, 58.7, 110.66, 1000, 0)
-
-
-    StartCutscene(0)
-    
-    while not (DoesCutsceneEntityExist(charName, 0)) do
-        Wait(0)
+    for k, v in pairs(clones) do
+        SetCutsceneEntityStreamingFlags('MP_'..k, 0, 1) 
+        RegisterEntityForCutscene(v.clone, 'MP_'..k, 0, 0, 64)
     end
 
-    ClonePedToTarget(plyrId, clone)
 
-    Wait(11000)
-    ClonePedToTarget(clone, plyrId)
-    DeleteEntity(clone)
+    if #clones < 4 then 
+        local remainder = 4-#clones
+        for i = #clones+1, #clones+remainder do
+            SetCutsceneEntityStreamingFlags('MP_'..i, 0, 1) 
+            RegisterEntityForCutscene(0, 'MP_'..i, 3, 0, 64)
+        end
+    end
+
+    DoScreenFadeIn(500)
+
+	NewLoadSceneStartSphere(coords.x, coords.y, coords.z, 1000, 0)
+    
+
+    StartCutsceneAtCoords(coords.x, coords.y, coords.z-1, 0)
+
+    for k, v in pairs(clones) do
+        while not (DoesCutsceneEntityExist('MP_'..k, 0)) do
+            Wait(0)
+        end
+    end
+
+    for k, v in pairs(clones) do
+        ClonePedToTarget(v.ped, v.clone)
+    end
+
+    Wait(GetCutsceneTotalDuration()-500)
     DoScreenFadeOut(500)
+    for k, v in pairs(clones) do
+        ClonePedToTarget(v.clone, v.ped)
+        DeleteEntity(v.clone)
+    end
     Wait(2000)
     StopCutsceneImmediately()
+
+    for k,v in pairs(table) do
+        SetEntityVisible(v.entity, true)
+    end
+    SetEntityVisible(plyrId, true)
+
+    if clones[1].ped == PlayerPedId() then TriggerServerEvent('al-trader:RemoveGroup') end
     DoScreenFadeIn(500)
-    local amount = 0
-    if name == 'blooddiamond' then amount = math.floor(math.random(45,50)) elseif name == 'goldbar' then amount = math.floor(math.random(40,45)) elseif name == 'silverbar' then amount = math.floor(math.random(30,35)) end
-    TriggerServerEvent('reputation:server:GiveRep', name..'selling-npc', amount)  
+
+
 end)
-
-function TargetMenu()
-    local goldbar = true
-    local silverbar = true
-    local blooddiamond = true
-    local replevel = 0
-    
-    QBCore.Functions.TriggerCallback('al-reputation:server:GetLevel', function(result)
-        print(result)
-        replevel = result
-    end)
-
-    print(replevel)
-
-    if QBCore.Functions.HasItem('goldbar') and replevel >= 6 then goldbar = false end
-    if QBCore.Functions.HasItem('silverbar') and replevel >= 3 then silverbar = false end
-
-
-    exports['qb-menu']:openMenu({
-        {
-            header = "Local Business",
-            isMenuHeader = true
-        },
-        {
-            header = "Sell Gold Bars",
-            txt = "",
-            hidden = goldbar,
-            params = {
-                isServer = true,
-                event = "al-trader:SellGoldBar",
-            }
-        },
-        {
-            header = "Sell Silver Bars",
-            txt = "",
-            hidden = silverbar,
-            params = {
-                isServer = true,
-                event = "al-trader:SellSilverBar",
-            }
-        },
-    })
-end
