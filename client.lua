@@ -1,8 +1,9 @@
 local table = {}
-QBCore = exports['qb-core']:GetCoreObject()
+local QBCore = exports['qb-core']:GetCoreObject()
+local thisCutsceneName = nil
 
 function LoadPeds()
-    for k,v in pairs(table) do
+    for _,v in pairs(table) do
         lib.RequestModel(v.model)
         v.entity = CreatePed(0, v.model, v.coords.x, v.coords.y, v.coords.z-1, v.coords.w, false, true)
         SetPedDefaultComponentVariation(v.entity)
@@ -53,19 +54,18 @@ end)
 AddEventHandler('onResourceStart', function(r)
     if GetCurrentResourceName() ~= r then return end
 
-    table = lib.callback.await('al-trader:GetPeds')
+    table, thisCutsceneName = lib.callback.await('al-trader:GetPeds')
     LoadPeds()
 end)
 
 AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
-    table = lib.callback.await('al-trader:GetPeds')
+    table, thisCutsceneName = lib.callback.await('al-trader:GetPeds')
     LoadPeds()
 end)
 
 RegisterNetEvent('startcutscenesell', function(ids)
     local plyrId = PlayerPedId()
     local coords = GetEntityCoords(plyrId)
-    local thisCutsceneName = 'hs3f_all_drp3'
     local clones = {}
 
     DoScreenFadeOut(500)
@@ -132,6 +132,4 @@ RegisterNetEvent('startcutscenesell', function(ids)
 
     if clones[1].ped == PlayerPedId() then TriggerServerEvent('al-trader:RemoveGroup') end
     DoScreenFadeIn(500)
-
-
 end)

@@ -1,4 +1,4 @@
-QBCore = exports['qb-core']:GetCoreObject()
+local QBCore = exports['qb-core']:GetCoreObject()
 local Groups = {}
 local coords = {
     [1] = {
@@ -17,34 +17,64 @@ local coords = {
         [3] = vector4(-1204.87, -1307.38, 4.84, 117)
     },
 }
+
+local cutsceneType = {
+    [1] = 'hs3f_all_drp2',
+    [2] = 'hs3f_all_drp3'
+}
+local thisCutsceneName = nil
+
 local peds = {
-    [1] = {
-        model = `s_m_m_movprem_01`,
-        coords = vector4(1902.90, 592.38, 178.40, 155),
-        entity = nil,
-        target = true,
+    ['hs3f_all_drp2'] = {
+        [1] = {
+            model = `g_m_m_mexboss_01`,
+            coords = vector4(1902.90, 592.38, 178.40, 155),
+            entity = nil,
+            target = true,
+        },
+        [2] = {
+            model = `g_m_y_mexgoon_01`,
+            coords = vector4(1904.22, 593.45, 178.40, 154),
+            entity = nil,
+            target = false,
+        },
+        [3] = {
+            model = `g_f_y_vagos_01`,
+            coords = vector4(1902.75, 594.19, 178.40, 154),
+            entity = nil,
+            target = false,
+        },
     },
-    [2] = {
-        model = `s_m_m_highsec_02`,
-        coords = vector4(1904.22, 593.45, 178.40, 154),
-        entity = nil,
-        target = false,
-    },
-    [3] = {
-        model = `s_m_m_highsec_02`,
-        coords = vector4(1902.75, 594.19, 178.40, 154),
-        entity = nil,
-        target = false,
-    },
+    ['hs3f_all_drp3'] = {
+        [1] = {
+            model = `s_m_m_movprem_01`,
+            coords = vector4(-937.52, 6616.12, 3.42, 0),
+            entity = nil,
+            target = true,
+        },
+        [2] = {
+            model = `s_m_m_highsec_02`,
+            coords = vector4(-938.65, 6614.36, 3.42, 1),
+            entity = nil,
+            target = false,
+        },
+        [3] = {
+            model = `s_m_m_highsec_02`,
+            coords = vector4(-936.10, 6614.40, 3.42, 1),
+            entity = nil,
+            target = false,
+        },
+    }
 }
 
 
 AddEventHandler('onResourceStart', function(r)
     if GetCurrentResourceName() ~= r then return end
 
-    local updatedcoords = coords[math.random(1,#coords)] 
-    for i = 1, #peds do
-        peds[i].coords = updatedcoords[i]
+    thisCutsceneName = cutsceneType[math.random(1,#cutsceneType)]
+    local updatedcoords = coords[math.random(1,#coords)]
+    for i = 1, #peds[thisCutsceneName] do
+        peds[thisCutsceneName][i].coords = updatedcoords[i]
     end
 end)
 
@@ -77,17 +107,6 @@ function GroupCreate(source)
     end
 end
 
-lib.addCommand('trade', {
-    help = 'quickmoney',
-    params = {},
-}, function(source, args)
-    local src = source
-    local amount = tonumber(args[1])
-    local Player = QBCore.Functions.GetPlayer(src)
-
-
-    exports['qb-inventory']:AddItem(src, 'markedbills', 10, nil, {worth = 500}, 'al-trader')
-end)
 
 RegisterNetEvent('al-trader:memberSync', function()
     local src = source
@@ -121,12 +140,12 @@ end)
 
 RegisterNetEvent('al-trader:RemoveGroup', function()
     local src = source
-    for k,v in pairs(Groups[src]) do
+    for _,v in pairs(Groups[src]) do
         SetPlayerRoutingBucket(v, 0)
     end
     Groups[src] = nil
 end)
 
 lib.callback.register('al-trader:GetPeds', function()
-    return peds
+    return peds[thisCutsceneName], thisCutsceneName
 end)
