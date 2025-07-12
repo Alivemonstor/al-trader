@@ -140,6 +140,7 @@ end)
 
 RegisterNetEvent('al-trader:RemoveGroup', function()
     local src = source
+    if not Groups[src] then return end
     for _,v in pairs(Groups[src]) do
         SetPlayerRoutingBucket(v, 0)
     end
