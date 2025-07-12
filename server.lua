@@ -113,6 +113,10 @@ RegisterNetEvent('al-trader:memberSync', function()
     local amount = 0
     local Player = QBCore.Functions.GetPlayer(src)
     local Items = exports['qb-inventory']:GetItemsByName(src, 'markedbills')
+    local currentPeds = peds[thisCutsceneName][math.random(1, #peds[thisCutsceneName])]
+    if not Player then return end
+
+    if #(GetEntityCoords(GetPlayerPed(src)) - vector3(currentPeds.coords.x, currentPeds.coords.y, currentPeds.coords.z)) > 10 then return end
 
     if Items == nil then return QBCore.Functions.Notify(src, 'You do not have anything to trade', 'error') end
 
