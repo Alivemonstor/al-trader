@@ -121,9 +121,7 @@ RegisterNetEvent('startcutscenesell', function(ids)
 
     Wait(2000)
     StopCutsceneImmediately()
-    SendNUIMessage({
-        status = false
-    })
+
     for k,v in pairs(table) do
         SetEntityVisible(v.entity, true)
     end
