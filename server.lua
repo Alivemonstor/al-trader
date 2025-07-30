@@ -1,20 +1,10 @@
-local QBCore = exports['qb-core']:GetCoreObject()
+local ESX = exports['es_extended']:getSharedObject()
 local Groups = {}
 local coords = {
     [1] = {
         [1] = vector4(1902.90, 592.38, 178.40, 155),
         [2] = vector4(1904.22, 593.45, 178.40, 154),
         [3] = vector4(1902.75, 594.19, 178.40, 154)
-    },
-    [2] = {
-        [1] = vector4(-937.52, 6616.12, 3.42, 0),
-        [2] = vector4(-938.65, 6614.36, 3.42, 1),
-        [3] = vector4(-936.10, 6614.40, 3.42, 1)
-    },
-    [3] = {
-        [1] = vector4(-1206.32, -1307.57, 4.81, 114),
-        [2] = vector4(-1205.52, -1306.17, 4.82, 117),
-        [3] = vector4(-1204.87, -1307.38, 4.84, 117)
     },
 }
 
@@ -110,32 +100,25 @@ end
 
 RegisterNetEvent('al-trader:memberSync', function()
     local src = source
-    local amount = 0
-    local Player = QBCore.Functions.GetPlayer(src)
-    local Items = exports['qb-inventory']:GetItemsByName(src, 'markedbills')
+    local Items = exports.ox_inventory:GetItem(src, 'black_money')
     local currentPeds = peds[thisCutsceneName][math.random(1, #peds[thisCutsceneName])]
     if not Player then return end
 
     if #(GetEntityCoords(GetPlayerPed(src)) - vector3(currentPeds.coords.x, currentPeds.coords.y, currentPeds.coords.z)) > 10 then return end
 
-    if Items == nil then return QBCore.Functions.Notify(src, 'You do not have anything to trade', 'error') end
+    if Items == nil or Items.count == 0 or Items.count < 10 then return lib.notify(src, {title = 'Trader', description = 'You do not have anything / enough to trade', type = 'error'}) end
 
+    if not exports.ox_inventory:RemoveItem(src, Items.name, Items.count) then return lib.notify(src, {title = 'Trader', description = 'Couldnt remove '..Items.label, type = 'error'}) end
 
-    for k,v in pairs(Items) do
-        amount += v.info.worth*v.amount
-    end
+    if Items.count == 0 then return lib.notify(src, {title = 'Trader', description = 'You do not have anything to trade', type = 'error'}) end
 
-    for k,v in pairs(Items) do
-        if not exports['qb-inventory']:RemoveItem(src, v.name, v.amount, v.slot, 'al-trader') then return QBCore.Functions.Notify(src, 'Couldnt remove '..v.name..' '..QBCore.Shared.Items[v.name].label) end
-        TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[v.name], "remove", v.amount)
-    end
-
-    if amount == 0 then return QBCore.Functions.Notify(src, 'You do not have anything to trade', 'error') end
-
-    Player.Functions.AddMoney('cash', amount, 'al-trader')
+    local amount = 0.9 * Items.count
+    exports.ox_inventory:AddItem(src, 'money', amount)
 
     GroupCreate(src)
+    
     Wait(10)
+
     for k,v in pairs(Groups[src]) do
         TriggerClientEvent('startcutscenesell', v, Groups[src])
         SetPlayerRoutingBucket(v, 55)
@@ -144,8 +127,11 @@ end)
 
 RegisterNetEvent('al-trader:RemoveGroup', function()
     local src = source
+
     if not Groups[src] then return end
+
     for _,v in pairs(Groups[src]) do
+        print('Removing group member: ' .. v)
         SetPlayerRoutingBucket(v, 0)
     end
     Groups[src] = nil

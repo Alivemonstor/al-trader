@@ -1,5 +1,5 @@
 local table = {}
-local QBCore = exports['qb-core']:GetCoreObject()
+local ESX = exports['es_extended']:getSharedObject()
 local thisCutsceneName = nil
 
 function LoadPeds()
@@ -12,30 +12,24 @@ function LoadPeds()
         SetEntityInvincible(v.entity, true)
         SetBlockingOfNonTemporaryEvents(v.entity, true)
         if v.target then
-            exports['qb-target']:AddTargetEntity(v.entity, {
-                options = {
-                    {
-                        type = 'server',
-                        icon = 'fas fa-briefcase',
-                        label = 'Do Business',
-                        event = 'al-trader:memberSync'
-                    },
+            exports['ox_target']:addLocalEntity(v.entity, {
+                {
+                    icon = 'fas fa-briefcase',
+                    label = 'Do Business',
+                    serverEvent = 'al-trader:memberSync',
+                    distance = 2.5,
                 },
-                distance = 2.5,
             })
         else
-            exports['qb-target']:AddTargetEntity(v.entity, {
-                options = {
-                    {
-                        type = 'server',
-                        icon = 'fas fa-briefcase',
-                        label = 'Do Business',
-                        action = function()
-                            QBCore.Functions.Notify('Speak to the boss.')
-                        end,
-                    },
+            exports['ox_target']:addLocalEntity(v.entity, {
+                {
+                    icon = 'fas fa-briefcase',
+                    label = 'Do Business',
+                    onSelect = function()
+                        lib.notify({title = 'Trader', description = 'Speak to the boss.', type = 'error'})
+                    end,
+                    distance = 2.5,
                 },
-                distance = 2.5,
             })
         end
     end
@@ -55,11 +49,9 @@ AddEventHandler('onResourceStart', function(r)
     if GetCurrentResourceName() ~= r then return end
 
     table, thisCutsceneName = lib.callback.await('al-trader:GetPeds')
-    LoadPeds()
 end)
 
-AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
-    table, thisCutsceneName = lib.callback.await('al-trader:GetPeds')
+RegisterNetEvent('esx:playerLoaded', function()
     LoadPeds()
 end)
 
@@ -117,19 +109,25 @@ RegisterNetEvent('startcutscenesell', function(ids)
     end
 
     Wait(GetCutsceneTotalDuration()-500)
+    
+
     DoScreenFadeOut(500)
+
+
     for k, v in pairs(clones) do
         ClonePedToTarget(v.clone, v.ped)
         DeleteEntity(v.clone)
     end
+
     Wait(2000)
     StopCutsceneImmediately()
-
+    SendNUIMessage({
+        status = false
+    })
     for k,v in pairs(table) do
         SetEntityVisible(v.entity, true)
     end
     SetEntityVisible(plyrId, true)
-
-    if clones[1].ped == PlayerPedId() then TriggerServerEvent('al-trader:RemoveGroup') end
     DoScreenFadeIn(500)
+    if clones[1].ped == PlayerPedId() then TriggerServerEvent('al-trader:RemoveGroup') end
 end)
